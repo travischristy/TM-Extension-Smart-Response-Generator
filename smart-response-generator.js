@@ -19,10 +19,12 @@
       throw new Error('API key not set. Please configure your Hugging Face API key in the settings.');
     }
   
-    const messages = [
-      { role: "system", content: "You are a helpful AI assistant designed to enhance conversations within a chat application. Your role is to analyze the provided chat history and generate 3 distinct response options that are contextually relevant and could steer the conversation in different directions. Aim for a friendly, helpful, and engaging tone in your suggested responses." },
-      { role: "user", content: context }
-    ];
+    const prompt = `You are a helpful AI assistant designed to enhance conversations within a chat application. Your role is to analyze the provided chat history and generate 3 distinct response options that are contextually relevant and could steer the conversation in different directions. Aim for a friendly, helpful, and engaging tone in your suggested responses.
+  
+  Chat history:
+  ${context}
+  
+  Generate 3 response options:`;
   
     try {
       const response = await fetch(MODEL_URL, {
@@ -32,7 +34,7 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          inputs: messages,
+          inputs: prompt,
           parameters: {
             max_new_tokens: 500,
             temperature: 0.7,
@@ -50,11 +52,7 @@
       const data = await response.json();
       
       if (Array.isArray(data) && data[0] && data[0].generated_text) {
-        // Standard text generation response
         return data[0].generated_text;
-      } else if (data.choices && data.choices[0] && data.choices[0].message) {
-        // Chat completion response
-        return data.choices[0].message.content;
       } else {
         throw new Error('Unexpected response format from API');
       }
@@ -64,6 +62,7 @@
     }
   }
 
+  
   // Function to get chat context
   function getChatContext() {
     const chatMessages = document.querySelectorAll('[data-element-id^="user-message"], [data-element-id^="ai-response"]');
@@ -82,8 +81,10 @@
     const suggestionsContainer = document.createElement('div');
     suggestionsContainer.id = 'smart-response-suggestions';
     suggestionsContainer.style.cssText = 'position: absolute; bottom: 100%; left: 0; width: 100%; background: #f0f0f0; border-top: 1px solid #ccc; padding: 10px; box-sizing: border-box;';
-
-    suggestions.split('\n').filter(s => s.trim()).forEach((suggestion, index) => {
+  
+    const options = suggestions.split('\n').filter(s => s.trim() && s.includes(':')).map(s => s.split(':')[1].trim());
+  
+    options.forEach((suggestion, index) => {
       const button = document.createElement('button');
       button.textContent = suggestion.slice(0, 50) + '...';
       button.style.cssText = 'margin: 5px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;';
@@ -93,7 +94,7 @@
       };
       suggestionsContainer.appendChild(button);
     });
-
+  
     chatInput.parentElement.style.position = 'relative';
     chatInput.parentElement.appendChild(suggestionsContainer);
   }
