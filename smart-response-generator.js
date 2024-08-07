@@ -105,12 +105,21 @@
       return modal;
     }
   
-    // Function to add the extension controls
-    function addExtensionControls() {
-      const chatInput = document.querySelector('[data-element-id="chat-input"]');
-      const controlsContainer = document.createElement('div');
-      controlsContainer.style.cssText = 'position: absolute; right: 10px; top: -40px; display: flex; align-items: center;';
-  
+  // Updated addExtensionControls function
+  function addExtensionControls() {
+    const chatInput = document.querySelector('[data-element-id="chat-input"]');
+    if (!chatInput) {
+      console.error('Chat input element not found. Retrying in 1 second...');
+      setTimeout(addExtensionControls, 1000);
+      return;
+    }
+
+    console.log('Chat input element found. Adding extension controls...');
+
+    const controlsContainer = document.createElement('div');
+    controlsContainer.style.cssText = 'position: absolute; right: 10px; top: -40px; display: flex; align-items: center;';
+
+    
       // Toggle switch
       const toggleLabel = document.createElement('label');
       toggleLabel.style.cssText = 'display: flex; align-items: center; margin-right: 10px; cursor: pointer;';
@@ -164,10 +173,13 @@
       chatInput.parentElement.style.position = 'relative';
       chatInput.parentElement.appendChild(controlsContainer);
   
+  
       // Initial toggle style update
       updateToggleStyle(toggleInput);
+
+      console.log('Extension controls added successfully.');
     }
-  
+    
     // Function to check if the extension is enabled
     function isExtensionEnabled() {
       return localStorage.getItem('smartResponseGeneratorEnabled') === 'true';
@@ -185,16 +197,22 @@
       }
     }
   
-    // Initialize the extension
+    // Updated initExtension function
     function initExtension() {
+      console.log('Initializing Smart Response Generator Extension...');
       addExtensionControls();
-      console.log('Smart Response Generator Extension initialized');
     }
-  
-    // Run the initialization when the page is fully loaded
-    if (document.readyState === 'complete') {
-      initExtension();
-    } else {
-      window.addEventListener('load', initExtension);
+
+    // Updated initialization logic
+    function tryInitExtension() {
+      if (document.readyState === 'complete') {
+        initExtension();
+      } else {
+        console.log('Document not ready. Waiting for load event...');
+        window.addEventListener('load', initExtension);
+      }
     }
+
+    // Start the initialization process
+    tryInitExtension();
   })();
