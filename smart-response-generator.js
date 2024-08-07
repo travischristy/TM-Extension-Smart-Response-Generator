@@ -1,30 +1,17 @@
 // Smart Response Generator Extension for TypingMind
 (() => {
-  const MODEL_URL = 'https://api-inference.huggingface.co/models/mistralai/Mistral-Nemo-Instruct-2407';
+  const MODEL_URL = 'https://api-inference.huggingface.co/models/mistralai/Mistral-Nemo-Instruct-2407/v1/chat/completions';
 
-  // Function to get API key from local storage
-  function getApiKey() {
-    return localStorage.getItem('smartResponseGeneratorApiKey');
-  }
-
-  // Function to set API key in local storage
-  function setApiKey(key) {
-    localStorage.setItem('smartResponseGeneratorApiKey', key);
-  }
-
-  // Function to generate response using Hugging Face API
   async function generateResponse(context) {
     const apiKey = getApiKey();
     if (!apiKey) {
       throw new Error('API key not set. Please configure your Hugging Face API key in the settings.');
     }
   
-    const prompt = `You are a helpful AI assistant designed to enhance conversations within a chat application. Your role is to analyze the provided chat history and generate 3 distinct response options that are contextually relevant and could steer the conversation in different directions. Aim for a friendly, helpful, and engaging tone in your suggested responses.
-  
-  Chat history:
-  ${context}
-  
-  Generate 3 response options:`;
+    const messages = [
+      { role: "system", content: "You are a helpful AI assistant designed to enhance conversations within a chat application. Your role is to analyze the provided chat history and generate 3 distinct response options that are contextually relevant and could steer the conversation in different directions. Aim for a friendly, helpful, and engaging tone in your suggested responses." },
+      { role: "user", content: context }
+    ];
   
     try {
       const response = await fetch(MODEL_URL, {
@@ -34,14 +21,11 @@
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 500,
-            temperature: 0.7,
-            top_p: 0.95,
-            do_sample: true,
-            return_full_text: false
-          }
+          messages: messages,
+          max_tokens: 500,
+          temperature: 0.7,
+          top_p: 0.95,
+          n: 3
         })
       });
   
@@ -51,8 +35,8 @@
   
       const data = await response.json();
       
-      if (Array.isArray(data) && data[0] && data[0].generated_text) {
-        return data[0].generated_text;
+      if (data.choices && Array.isArray(data.choices)) {
+        return data.choices.map(choice => choice.message.content);
       } else {
         throw new Error('Unexpected response format from API');
       }
@@ -82,9 +66,7 @@
     suggestionsContainer.id = 'smart-response-suggestions';
     suggestionsContainer.style.cssText = 'position: absolute; bottom: 100%; left: 0; width: 100%; background: #f0f0f0; border-top: 1px solid #ccc; padding: 10px; box-sizing: border-box;';
   
-    const options = suggestions.split('\n').filter(s => s.trim() && s.includes(':')).map(s => s.split(':')[1].trim());
-  
-    options.forEach((suggestion, index) => {
+    suggestions.forEach((suggestion, index) => {
       const button = document.createElement('button');
       button.textContent = suggestion.slice(0, 50) + '...';
       button.style.cssText = 'margin: 5px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;';
