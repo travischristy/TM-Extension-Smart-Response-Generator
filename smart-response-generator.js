@@ -18,36 +18,50 @@
     if (!apiKey) {
       throw new Error('API key not set. Please configure your Hugging Face API key in the settings.');
     }
-
-    const prompt = `Based on the following conversation, generate 3 smart and contextually relevant responses for the user to choose from:
-
-${context}
-
-Generate responses:`;
-
-    const response = await fetch(MODEL_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 150,
-          temperature: 0.7,
-          top_p: 0.95,
-          do_sample: true,
-          return_full_text: false
-        }
-      })
-    });
-
-    const data = await response.json();
-    if (data.error) {
-      throw new Error(`API Error: ${data.error}`);
+  
+    const messages = [
+      { role: "system", content: "You are a helpful AI assistant designed to enhance conversations within a chat application. Your role is to analyze the provided chat history and generate 3 distinct response options that are contextually relevant and could steer the conversation in different directions. Aim for a friendly, helpful, and engaging tone in your suggested responses." },
+      { role: "user", content: context }
+    ];
+  
+    try {
+      const response = await fetch(MODEL_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          inputs: messages,
+          parameters: {
+            max_new_tokens: 150,
+            temperature: 0.7,
+            top_p: 0.95,
+            do_sample: true,
+            return_full_text: false
+          }
+        })
+      });
+  
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+  
+      const data = await response.json();
+      
+      if (Array.isArray(data) && data[0] && data[0].generated_text) {
+        // Standard text generation response
+        return data[0].generated_text;
+      } else if (data.choices && data.choices[0] && data.choices[0].message) {
+        // Chat completion response
+        return data.choices[0].message.content;
+      } else {
+        throw new Error('Unexpected response format from API');
+      }
+    } catch (error) {
+      console.error('Error in generateResponse:', error);
+      throw error;
     }
-    return data;
   }
 
   // Function to get chat context
