@@ -105,19 +105,19 @@
       return modal;
     }
   
-  // Updated addExtensionControls function
-  function addExtensionControls() {
-    const chatInput = document.querySelector('[data-element-id="chat-input"]');
-    if (!chatInput) {
-      console.error('Chat input element not found. Retrying in 1 second...');
-      setTimeout(addExtensionControls, 1000);
-      return;
-    }
+    // Updated addExtensionControls function
+    function addExtensionControls() {
+      const chatInput = document.querySelector('[data-element-id="chat-input"]');
+      if (!chatInput) {
+        console.error('Chat input element not found. Retrying in 1 second...');
+        setTimeout(addExtensionControls, 1000);
+        return;
+      }
 
-    console.log('Chat input element found. Adding extension controls...');
+      console.log('Chat input element found. Adding extension controls...');
 
-    const controlsContainer = document.createElement('div');
-    controlsContainer.style.cssText = 'position: absolute; right: 10px; top: -40px; display: flex; align-items: center;';
+      const controlsContainer = document.createElement('div');
+      controlsContainer.style.cssText = 'position: absolute; right: 10px; top: -40px; display: flex; align-items: center;';
 
     
       // Toggle switch
