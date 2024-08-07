@@ -1,6 +1,6 @@
 // Smart Response Generator Extension for TypingMind
 (() => {
-  const MODEL_URL = 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1';
+  const MODEL_URL = 'https://api-inference.huggingface.co/models/mistralai/Mistral-Nemo-Instruct-2407';
 
   // Function to get API key from local storage
   function getApiKey() {
@@ -19,10 +19,11 @@
       throw new Error('API key not set. Please configure your Hugging Face API key in the settings.');
     }
 
-    if (!context.trim()) {
-      console.warn('Empty context detected. Using default prompt.');
-      context = "Generate a friendly greeting and ask how you can assist.";
-    }
+    const prompt = `Based on the following conversation, generate 3 smart and contextually relevant responses for the user to choose from:
+
+${context}
+
+Generate responses:`;
 
     const response = await fetch(MODEL_URL, {
       method: 'POST',
@@ -31,12 +32,13 @@
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        inputs: context,
+        inputs: prompt,
         parameters: {
-          max_new_tokens: 100,
+          max_new_tokens: 150,
           temperature: 0.7,
           top_p: 0.95,
-          do_sample: true
+          do_sample: true,
+          return_full_text: false
         }
       })
     });
@@ -50,9 +52,9 @@
 
   // Function to get chat context
   function getChatContext() {
-    const chatMessages = document.querySelectorAll('[data-element-id^="user-message-"], [data-element-id^="ai-response-"]');
-    const context = Array.from(chatMessages).slice(-6).map(msg => {
-      const isUser = msg.getAttribute('data-element-id').startsWith('user-message-');
+    const chatMessages = document.querySelectorAll('[data-element-id^="user-message"], [data-element-id^="ai-response"]');
+    const context = Array.from(chatMessages).slice(-10).map(msg => {
+      const isUser = msg.getAttribute('data-element-id').startsWith('user-message');
       return (isUser ? 'User: ' : 'Assistant: ') + msg.textContent.trim();
     }).join("\n");
     
@@ -67,7 +69,7 @@
     suggestionsContainer.id = 'smart-response-suggestions';
     suggestionsContainer.style.cssText = 'position: absolute; bottom: 100%; left: 0; width: 100%; background: #f0f0f0; border-top: 1px solid #ccc; padding: 10px; box-sizing: border-box;';
 
-    suggestions.forEach((suggestion, index) => {
+    suggestions.split('\n').filter(s => s.trim()).forEach((suggestion, index) => {
       const button = document.createElement('button');
       button.textContent = suggestion.slice(0, 50) + '...';
       button.style.cssText = 'margin: 5px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;';
@@ -160,7 +162,7 @@
           const context = getChatContext();
           const response = await generateResponse(context);
           if (response && response[0] && response[0].generated_text) {
-            displaySuggestions(response[0].generated_text.split('\n').filter(s => s.trim()));
+            displaySuggestions(response[0].generated_text);
           } else {
             throw new Error('Unexpected response format from API');
           }
