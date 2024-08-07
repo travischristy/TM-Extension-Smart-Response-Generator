@@ -34,7 +34,7 @@
         body: JSON.stringify({
           inputs: messages,
           parameters: {
-            max_new_tokens: 150,
+            max_new_tokens: 500,
             temperature: 0.7,
             top_p: 0.95,
             do_sample: true,
