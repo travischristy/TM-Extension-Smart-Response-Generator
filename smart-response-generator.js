@@ -22,7 +22,7 @@
     }
   
     const messages = [
-      { role: "system", content: "You are a helpful AI assistant designed to enhance conversations within a chat application. Your role is to analyze the provided chat history and generate 3 distinct response options that are contextually relevant and could steer the conversation in different directions. Aim for a friendly, helpful, and engaging tone in your suggested responses." },
+      { role: "system", content: "You are a helpful AI assistant designed to enhance conversations within a chat application. Your role is to analyze the provided chat history and generate 3 distinct response options that are contextually relevant and could steer the conversation in different directions. Aim for a friendly, helpful, and engaging tone in your suggested responses. Provide your responses in a numbered list format." },
       { role: "user", content: context }
     ];
   
@@ -38,7 +38,7 @@
           max_tokens: 500,
           temperature: 0.7,
           top_p: 0.95,
-          n: 3
+          n: 1  // We'll generate one response and split it into options
         })
       });
   
@@ -48,8 +48,11 @@
   
       const data = await response.json();
       
-      if (data.choices && Array.isArray(data.choices)) {
-        return data.choices.map(choice => choice.message.content);
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        const content = data.choices[0].message.content;
+        // Split the content into separate options
+        const options = content.split('\n').filter(line => line.trim().match(/^\d+\./));
+        return options;
       } else {
         throw new Error('Unexpected response format from API');
       }
@@ -81,10 +84,12 @@
   
     suggestions.forEach((suggestion, index) => {
       const button = document.createElement('button');
-      button.textContent = suggestion.slice(0, 50) + '...';
+      // Remove the numbering from the suggestion text
+      const suggestionText = suggestion.replace(/^\d+\.\s*/, '');
+      button.textContent = suggestionText.slice(0, 50) + '...';
       button.style.cssText = 'margin: 5px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;';
       button.onclick = () => {
-        chatInput.value = suggestion;
+        chatInput.value = suggestionText;
         suggestionsContainer.remove();
       };
       suggestionsContainer.appendChild(button);
@@ -170,11 +175,11 @@
         }
         try {
           const context = getChatContext();
-          const response = await generateResponse(context);
-          if (response && response[0] && response[0].generated_text) {
-            displaySuggestions(response[0].generated_text);
+          const suggestions = await generateResponse(context);
+          if (suggestions.length > 0) {
+            displaySuggestions(suggestions);
           } else {
-            throw new Error('Unexpected response format from API');
+            throw new Error('No suggestions generated');
           }
         } catch (error) {
           console.error('Error details:', error);
