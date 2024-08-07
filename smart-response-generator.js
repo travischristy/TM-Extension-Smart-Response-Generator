@@ -2,6 +2,19 @@
 (() => {
   const MODEL_URL = 'https://api-inference.huggingface.co/models/mistralai/Mistral-Nemo-Instruct-2407/v1/chat/completions';
 
+
+  
+  // Function to get API key from local storage
+  function getApiKey() {
+    return localStorage.getItem('smartResponseGeneratorApiKey');
+  }
+
+  // Function to set API key in local storage
+  function setApiKey(key) {
+    localStorage.setItem('smartResponseGeneratorApiKey', key);
+  }
+
+
   async function generateResponse(context) {
     const apiKey = getApiKey();
     if (!apiKey) {
